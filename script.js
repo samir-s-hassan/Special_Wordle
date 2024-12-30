@@ -15,6 +15,9 @@ let map = new Map(); // Tracks used letters in the current attempt
 let submitDelay = 200; // Minimum delay between submissions
 let lastSubmit = 0; // Tracks the last submission timestamp
 
+// Highest score tracking
+let highestScore = parseInt(localStorage.getItem("highest_score")) || 0;
+
 // Add event listener for physical keyboard
 document.addEventListener("keydown", (event) => {
   keyPressed(event.key);
@@ -40,7 +43,7 @@ function handleBackspace() {
 }
 
 function handleEnter() {
-  if (currentLetter > 5) {
+  if (boardArray[currentTry - 1].length === 5) {
     submitTry(boardArray[currentTry - 1]);
   } else {
     alert("Complete the row before pressing ENTER!");
@@ -105,7 +108,10 @@ function submitTry(word) {
   if (lastSubmit + submitDelay > Date.now()) return;
   lastSubmit = Date.now();
 
-  if (!allowed.includes(word.toLowerCase()) && !wordsArr.includes(word.toLowerCase())) {
+  if (
+    !allowed.includes(word.toLowerCase()) &&
+    !wordsArr.includes(word.toLowerCase())
+  ) {
     alert("Word does not exist!");
     return;
   }
@@ -127,10 +133,22 @@ function submitTry(word) {
 // Handle a win
 function handleWin() {
   const pointsWon = calculatePoints();
+  const currentScore = parseInt(localStorage.getItem("wordle_score")) || 0;
+  const totalPoints = currentScore + pointsWon;
+
+  // Update highest score if needed
+  if (totalPoints > highestScore) {
+    highestScore = totalPoints;
+    localStorage.setItem("highest_score", highestScore); // Store highest score in localStorage
+    alert(
+      `Congratulations! You've set a new highest score of ${highestScore}!`
+    );
+  }
+
   alert(
-    `Wordle Complete!\n+${pointsWon} points\nScore: ${localStorage.getItem(
-      "wordle_score"
-    )}\nStreak: ${localStorage.getItem("wordle_streak")}`
+    `Wordle Complete!\n+${pointsWon} points\nScore: ${totalPoints}\nStreak: ${localStorage.getItem(
+      "wordle_streak"
+    )}\nHighest Score: ${highestScore}`
   );
   if (confirm("Play again?")) location.reload();
 }
@@ -145,7 +163,9 @@ function handleLoss() {
   alert(
     `Wordle lost! Correct answer: ${correctWord}\nScore: ${localStorage.getItem(
       "wordle_score"
-    )}\nStreak: ${localStorage.getItem("wordle_streak")}`
+    )}\nStreak: ${localStorage.getItem(
+      "wordle_streak"
+    )}\nHighest Score: ${highestScore}`
   );
   if (confirm("Play again?")) location.reload();
 }
@@ -158,7 +178,9 @@ function updateBoard(trySubmitted) {
   for (let i = 0; i < currentBoxes.length; i++) {
     currentBoxes[i].innerText = boardArray[currentTry - 1][i] || "";
     currentBoxes[i].style.border =
-      i < currentLetter - 1 ? "2px solid rgb(140, 140, 140)" : "2px solid rgb(90, 90, 90)";
+      i < currentLetter - 1
+        ? "2px solid rgb(140, 140, 140)"
+        : "2px solid rgb(90, 90, 90)";
   }
 
   if (trySubmitted) applyColors(currentBoxes);
